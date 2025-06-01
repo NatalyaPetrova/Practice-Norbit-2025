@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .task-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .task-card .text { flex: 1; margin: 0 10px; }
+        .icon-btn img { width: 20px; height: 20px; }
+    </style>
+</head>
+<body>
+<div class="container-sm">
+    <h1 class="mb-4">ToDo List</h1>
+    <div class="mb-3">
+        <input type="text" id="taskInput" class="form-control" placeholder="Введите задачу">
+    </div>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" onclick="addTask()">Добавить</button>
+        <select id="taskFilter" class="form-select w-auto d-inline-block ms-2" onchange="renderTasks()">
+            <option value="active">Активные</option>
+            <option value="completed">Завершённые</option>
+            <option value="deleted">Удалённые</option>
+        </select>
+    </div>
+    <div id="taskContainer"></div>
+</div>
+
+<script>
+    let activeTasks = [], completedTasks = [], deletedTasks = [];
+
+    function saveTasks() {
+      localStorage.setItem('activeTasks', JSON.stringify(activeTasks));
+      localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+      localStorage.setItem('deletedTasks', JSON.stringify(deletedTasks));
+    }
+
+    function loadTasks() {
+      activeTasks = JSON.parse(localStorage.getItem('activeTasks')) || [];
+      completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || [];
+      deletedTasks = JSON.parse(localStorage.getItem('deletedTasks')) || [];
+    }
+
+    function createActiveDiv(name) {
+      const div = document.createElement('div');
+      div.className = 'task-card border p-2 rounded bg-light';
+      div.innerHTML = `
+        <span class="text">${name}</span>
+        <button class="btn btn-success btn-sm me-2 icon-btn" onclick="completeTask('${name}')">
+          <img src="https://img.icons8.com/?size=100&id=sz8cPVwzLrMP&format=png&color=000000" alt="Done">
+        </button>
+        <button class="btn btn-danger btn-sm icon-btn" onclick="deleteTask('${name}')">
+          <img src="https://img.icons8.com/?size=100&id=9zsHFzY89mt4&format=png&color=000000" alt="Delete">
+        </button>
+      `;
+      return div;
+    }
+
+    function createCompletedAndDeletedDiv(name, type) {
+      const div = document.createElement('div');
+      div.className = 'task-card border p-2 rounded bg-secondary text-white';
+      div.innerHTML = `
+        <span class="text">${name}</span>
+        <button class="btn btn-warning btn-sm icon-btn" onclick="activeTask('${name}', '${type}')">
+          <img src="https://img.icons8.com/?size=100&id=LQ4eVlrKaVbT&format=png&color=000000" alt="Restore">
+        </button>
+      `;
+      return div;
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      const name = input.value.trim();
+      if (name) {
+        activeTasks.push(name);
+        input.value = '';
+        renderTasks();
+        saveTasks();
+      }
+    }
+
+    function completeTask(name) {
+      activeTasks = activeTasks.filter(t => t !== name);
+      completedTasks.push(name);
+      renderTasks();
+      saveTasks();
+    }
+
+    function deleteTask(name) {
+      activeTasks = activeTasks.filter(t => t !== name);
+      deletedTasks.push(name);
+      renderTasks();
+      saveTasks();
+    }
+
+    function activeTask(name, from) {
+      if (from === 'completed') completedTasks = completedTasks.filter(t => t !== name);
+      if (from === 'deleted') deletedTasks = deletedTasks.filter(t => t !== name);
+      activeTasks.push(name);
+      renderTasks();
+      saveTasks();
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('taskContainer');
+      const filter = document.getElementById('taskFilter').value;
+      container.innerHTML = '';
+      let list = [];
+      if (filter === 'active') list = activeTasks.map(name => createActiveDiv(name));
+      if (filter === 'completed') list = completedTasks.map(name => createCompletedAndDeletedDiv(name, 'completed'));
+      if (filter === 'deleted') list = deletedTasks.map(name => createCompletedAndDeletedDiv(name, 'deleted'));
+      list.forEach(el => container.appendChild(el));
+    }
+
+    window.addEventListener('beforeunload', saveTasks);
+    loadTasks();
+    renderTasks();
+</script>
+</body>
+</html>

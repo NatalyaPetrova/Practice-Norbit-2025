@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Блэкджек</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 40px; background: #f2f2f2; }
+        .cards { margin: 10px 0; }
+        .btns button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+<h1>Блэкджек</h1>
+<div>
+    <h2>Игрок: <span id="player-score">0</span></h2>
+    <div class="cards" id="player-cards"></div>
+
+    <h2>Дилер: <span id="dealer-score">0</span></h2>
+    <div class="cards" id="dealer-cards"></div>
+
+    <div class="btns">
+        <button onclick="startGame()">Начать</button>
+        <button onclick="hit()">Взять карту</button>
+        <button onclick="stand()">Стоп</button>
+    </div>
+
+    <h2 id="result"></h2>
+</div>
+
+<script>
+    let deck = [], playerCards = [], dealerCards = [], gameOver = false;
+
+    function createDeck() {
+      const suits = ['♠', '♥', '♦', '♣'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      let d = [];
+      for (let suit of suits) {
+        for (let val of values) {
+          d.push({ val, suit });
+        }
+      }
+      return d.sort(() => Math.random() - 0.5);
+    }
+
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.val)) return 10;
+      if (card.val === 'A') return 11;
+      return parseInt(card.val);
+    }
+
+    function calculateScore(cards) {
+      let score = 0;
+      let aces = 0;
+      for (let card of cards) {
+        let value = getCardValue(card);
+        score += value;
+        if (card.val === 'A') aces++;
+      }
+      while (score > 21 && aces > 0) {
+        score -= 10;
+        aces--;
+      }
+      return score;
+    }
+
+    function displayCards(cards, elementId) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = cards.map(c => `${c.val}${c.suit}`).join(' ');
+    }
+
+    function updateScores() {
+      document.getElementById('player-score').textContent = calculateScore(playerCards);
+      document.getElementById('dealer-score').textContent = calculateScore(dealerCards);
+    }
+
+    function startGame() {
+      deck = createDeck();
+      playerCards = [deck.pop(), deck.pop()];
+      dealerCards = [deck.pop()];
+      gameOver = false;
+      document.getElementById('result').textContent = '';
+      displayCards(playerCards, 'player-cards');
+      displayCards(dealerCards, 'dealer-cards');
+      updateScores();
+    }
+
+    function hit() {
+      if (gameOver) return;
+      playerCards.push(deck.pop());
+      displayCards(playerCards, 'player-cards');
+      updateScores();
+      if (calculateScore(playerCards) > 21) {
+        endGame('Перебор! Вы проиграли.');
+      }
+    }
+
+    function stand() {
+      if (gameOver) return;
+      while (calculateScore(dealerCards) < 17) {
+        dealerCards.push(deck.pop());
+        displayCards(dealerCards, 'dealer-cards');
+        updateScores();
+      }
+
+      const player = calculateScore(playerCards);
+      const dealer = calculateScore(dealerCards);
+
+      if (dealer > 21 || player > dealer) {
+        endGame('Вы выиграли!');
+      } else if (player < dealer) {
+        endGame('Вы проиграли.');
+      } else {
+        endGame('Ничья.');
+      }
+    }
+
+    function endGame(message) {
+      document.getElementById('result').textContent = message;
+      gameOver = true;
+    }
+</script>
+</body>
+</html>
